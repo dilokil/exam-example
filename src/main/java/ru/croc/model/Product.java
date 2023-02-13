@@ -2,6 +2,9 @@ package ru.croc.model;
 
 import java.math.BigInteger;
 
+/**
+ * Продкукт.
+ */
 public class Product {
     private String id;
     private String productName;

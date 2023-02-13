@@ -4,50 +4,42 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvException;
 import ru.croc.model.Product;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
+/**
+ * Сервис продуктов.
+ */
 public class ProductService {
-    private final static String DATA_PATH = ".\\data\\products.csv";
-
-    private static List<Product> repository = null;
-
-
-    public static void createProductService() {
+    private Map<String, Product> repository = null;
+    public void createProductService(final String dataPath) throws IOException, CsvException {
         if (repository == null) {
-            repository = new ArrayList<>();
+            repository = new HashMap<>();
             CSVParser csvParser = new CSVParserBuilder().withSeparator(';').build();
-            try(CSVReader reader = new CSVReaderBuilder(
-                    new FileReader(DATA_PATH))
+            CSVReader reader = new CSVReaderBuilder(
+                    new FileReader(dataPath))
                     .withCSVParser(csvParser)
                     .withSkipLines(1)
-                    .build()){
-                List<String[]> r = reader.readAll();
-                r.forEach(el -> repository.add( new Product(
-                        el[0],
-                        el[1],
-                        el[2],
-                        Double.parseDouble(el[3]),
-                        BigInteger.valueOf(Integer.parseInt(el[4]))
-                )));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                    .build();
+            List<String[]> r = reader.readAll();
+            r.forEach(el -> repository.put(el[0], new Product(
+                    el[0],
+                    el[1],
+                    el[2],
+                    Double.parseDouble(el[3]),
+                    BigInteger.valueOf(Integer.parseInt(el[4]))
+            )));
         }
     }
-
-    public static Product getProductById(String id) {
-        return repository.stream()
-                .filter(el -> el.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+    public Product getProductById(String id) {
+        return Optional.ofNullable(repository.get(id)).orElseThrow();
     }
-
-    public static List<Product> getAll() {
-        return repository;
+    public List<Product> getAll() {
+        return new ArrayList<>(repository.values());
     }
 }

@@ -3,13 +3,16 @@ package ru.croc.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Заказ.
+ */
 public class Order {
     private String id;
     private String userId;
     private LocalDateTime createdDate;
-    private List<String> products;
+    private List<Product> products;
 
-    public Order(String id, String userId, LocalDateTime createdDate, List<String> products) {
+    public Order(String id, String userId, LocalDateTime createdDate, List<Product> products) {
         this.id = id;
         this.userId = userId;
         this.createdDate = createdDate;
@@ -40,11 +43,11 @@ public class Order {
         this.createdDate = createdDate;
     }
 
-    public List<String> getProducts() {
+    public List<Product> getProducts() {
         return products;
     }
 
-    public void setProducts(List<String> products) {
+    public void setProducts(List<Product> products) {
         this.products = products;
     }
 }

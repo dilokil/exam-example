@@ -4,68 +4,67 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvException;
 import ru.croc.model.Order;
+import ru.croc.model.Product;
 
 import java.io.FileReader;
-import java.math.BigInteger;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис заказов.
+ */
 public class OrderService {
     private final static String DATA_PATH = ".\\data\\orders.csv";
-
-    private static List<Order> repository = null;
-
     private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private final ProductService productService;
+    private Map<String, Order> repository = null;
 
-    private OrderService() {
-
+    public OrderService(ProductService productService) {
+        this.productService = productService;
     }
 
-    public static void createOrderService() {
+    public void createOrderService(String dataPath) throws IOException, CsvException {
         if (repository == null) {
-            repository = new ArrayList<>();
+            repository = new HashMap<>();
             CSVParser csvParser = new CSVParserBuilder().withSeparator(';').build();
-            try(CSVReader reader = new CSVReaderBuilder(
-                    new FileReader(DATA_PATH))
+            CSVReader reader = new CSVReaderBuilder(
+                    new FileReader(dataPath))
                     .withCSVParser(csvParser)
                     .withSkipLines(1)
-                    .build()){
-                List<String[]> r = reader.readAll();
-                r.forEach(el -> repository.add( new Order(
-                        el[0],
-                        el[1],
-                        LocalDateTime.parse(el[2], FORMATTER),
-                        parseProductsId(el[3])
-                )));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                    .build();
+            List<String[]> r = reader.readAll();
+            r.forEach(el -> repository.put(el[0], new Order(
+                    el[0],
+                    el[1],
+                    LocalDateTime.parse(el[2], FORMATTER),
+                    parseProductsId(el[3])
+            )));
         }
     }
-    private static List<String> parseProductsId(String productsId){
-        return Arrays.stream(productsId.replaceAll("\\[|\\]", "").split(",")).map(String::trim)
+
+    private List<Product> parseProductsId(String productsId) {
+        return Arrays.stream(productsId.replaceAll("\\[|\\]", "").split(","))
+                .map(String::trim)
+                .map(productService::getProductById)
                 .collect(Collectors.toList());
     }
 
-    public static Order getOrderById(String id) {
-        return repository.stream()
-                .filter(el -> el.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+    public Order getOrderById(String id) {
+        return Optional.ofNullable(repository.get(id)).orElseThrow();
     }
 
-    public static List<Order> getAll() {
-        return repository;
+    public List<Order> getAll() {
+        return new ArrayList<>(repository.values());
     }
 
-    public static List<Order> getOrdersByDate(LocalDate date) {
-        return repository.stream()
+    public List<Order> getOrdersByDate(LocalDate date) {
+        return getAll().stream()
                 .filter(el -> date.equals(el.getCreatedDate().toLocalDate()))
                 .collect(Collectors.toList());
     }
